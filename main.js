@@ -14,16 +14,22 @@ class Game {
         this.numberOfEnemies = 50;
         this.createEnemyPool();
         this.enemyTimer = 0;
-        this.enemyInterval = 1000;
+        this.enemyInterval = 850;
 
         this.score = 0;
         this.lives;
         this.gameOver = true;
+        this.debug = true;
 
-        this.winningScore = 3;
+        this.winningScore = 50;
         this.message1 = "Seja rápid@!";
         this.message2 = "Ou seja devorad@!";
         this.message3 = 'Tecle "Enter!" ou "R" para começar';
+
+        this.spriteTimer = 0;
+        this.spriteInterval = 150;
+        this.spriteUpdate = false;
+
 
         this.mouse = {
             x: undefined,
@@ -70,6 +76,15 @@ class Game {
             this.mouse.y = e.changedTouches[0].pageY;
             this.mouse.pressed = false;
         });
+        window.addEventListener('keyup', e=> {
+            if (e.key === 'Enter' || e.key.toLowerCase() === 'r'){
+                this.start();
+            } else if (e.key === ' ' || e.key.toLowerCase() === 'f'){
+                this.toggleFullScreen();
+            } else if (e.key.toLowerCase() === 'd'){
+                this.debug = !this.debug;
+            }
+        })
     }
     start(){
         this.resize(window.innerWidth, window.innerHeight);
@@ -105,13 +120,14 @@ class Game {
     }
     createEnemyPool(){
         for (let i = 0; i < this.numberOfEnemies; i++){
-            this.enemyPool.push(new Enemy(this));
+            this.enemyPool.push(new Beetlemorph(this));
         }
 
     }
     getEnemy(){
         for (let i = 0; i < this.enemyPool.length; i++){
             if (this.enemyPool[i].free) return this.enemyPool[i];
+            console.log(this.enemyPool[i]);
         }
     }
     handleEnemies(deltaTime){
@@ -137,6 +153,16 @@ class Game {
             }
         }
     }
+    handleSpriteTimer(deltaTime){
+        if (this.spriteTimer < this.spriteInterval){
+            this.spriteTimer += deltaTime;
+            this.spriteUpdate = false;
+        } else {
+            this.spriteTimer = 0;
+            this.spriteUpdate = true;
+        }
+
+    }
     drawStatusText(){
         this.ctx.save();
         this.ctx.textAlign = 'left';
@@ -158,12 +184,16 @@ class Game {
         this.ctx.restore();
     }
     render(deltaTime){
+        this.handleSpriteTimer(deltaTime);
         this.drawStatusText();
         if (!this.gameOver) this.handleEnemies(deltaTime);
+
+        for (let i = this.enemyPool.length -1; i >=0; i--){
+            this.enemyPool[i].update(deltaTime);
+        }
         this.enemyPool.forEach(enemy => {
-            enemy.update();
             enemy.draw();
-        })
+        });
     }
 }
 
@@ -172,7 +202,7 @@ window.addEventListener('load', function(){
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    ctx.fillStyle = 'green';
+    ctx.fillStyle = 'white';
 
     const game = new Game(canvas, ctx);
     
